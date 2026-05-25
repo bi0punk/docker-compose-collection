@@ -10,6 +10,7 @@ Colección de docker-compose listos para usar, cada uno en su propio directorio 
 | [grafana-prometheus/](grafana-prometheus/) | Grafana + Prometheus | `3000` (Grafana), `9090` (Prom) |
 | [postgres/](postgres/) | PostgreSQL 16           | `5432`                         |
 | [portainer/](portainer/) | Portainer CE           | `9000` (HTTP), `9443` (HTTPS)  |
+| [n8n/](n8n/)         | n8n Workflow Automation | `5678` (UI)                    |
 | [rabbitmq/](rabbitmq/) | RabbitMQ + Management   | `5672` (AMQP), `15672` (UI)    |
 
 ## Cómo usar
