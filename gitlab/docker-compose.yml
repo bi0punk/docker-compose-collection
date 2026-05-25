@@ -1,9 +1,10 @@
 services:
   gitlab:
-    image: gitlab/gitlab-ce:latest
+    image: gitlab/gitlab-ce:${GITLAB_VERSION:-17.11.1-ce.0}
     container_name: gitlab
-    hostname: gitlab
+    hostname: ${GITLAB_HOSTNAME:-gitlab}
     restart: unless-stopped
+    stop_grace_period: 2m
     ports:
       - "${GITLAB_SSH_PORT:-8022}:22"
       - "${GITLAB_HTTP_PORT:-8080}:80"
@@ -14,17 +15,33 @@ services:
       - gitlab_data:/var/opt/gitlab
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        gitlab_rails['initial_root_email'] = '${GITLAB_ROOT_EMAIL:-admin@example.com}'
-        gitlab_rails['initial_root_password'] = '${GITLAB_ROOT_PASSWORD:-changeme123}'
-        gitlab_rails['gitlab_shell_ssh_port'] = ${GITLAB_SSH_PORT:-8022}
         external_url '${GITLAB_HOST:-http://localhost:8080}'
-    shm_size: '256m'
+        gitlab_rails['initial_root_email'] = '${GITLAB_ROOT_EMAIL:-admin@example.com}'
+        gitlab_rails['initial_root_password'] = '${GITLAB_ROOT_PASSWORD}'
+        gitlab_rails['gitlab_shell_ssh_port'] = ${GITLAB_SSH_PORT:-8022}
+        gitlab_rails['time_zone'] = '${GITLAB_TIMEZONE:-UTC}'
+
+        # Deshabilitar funciones pesadas si no se usan
+        gitlab_rails['gitlab_email_enabled'] = false
+        grafana['enable'] = false
+        prometheus_monitoring['enable'] = false
+
+        # Ajustes de rendimiento
+        puma['worker_timeout'] = 60
+        puma['worker_processes'] = 2
+        sidekiq['max_concurrency'] = 10
+    shm_size: "256m"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/-/health"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 300s
+      start_period: 5m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
 volumes:
   gitlab_config:

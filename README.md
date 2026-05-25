@@ -1,43 +1,64 @@
-# docker-compose-collection
+# COL — Stack de infraestructura con Docker Compose
 
-Colección de docker-compose listos para usar, cada uno en su propio directorio con documentación independiente.
+Colección de servicios listos para desplegar, cada uno en su propio directorio con `docker-compose.yml` y `.env.example`.
 
-## Servicios
+## Servicios incluidos
 
-| Directorio           | Servicios                 | Puertos expuestos              |
-|----------------------|---------------------------|--------------------------------|
-| [gitlab/](gitlab/)   | GitLab CE + Runner        | `8022` (SSH), `8080` (HTTP)    |
-| [grafana-prometheus/](grafana-prometheus/) | Grafana + Prometheus | `3000` (Grafana), `9090` (Prom) |
-| [postgres/](postgres/) | PostgreSQL 16           | `5432`                         |
-| [portainer/](portainer/) | Portainer CE           | `9000` (HTTP), `9443` (HTTPS)  |
-| [n8n/](n8n/)         | n8n Workflow Automation | `5678` (UI)                    |
-| [rabbitmq/](rabbitmq/) | RabbitMQ + Management   | `5672` (AMQP), `15672` (UI)    |
+| Directorio            | Servicio                  | Puerto(s)          |
+|-----------------------|---------------------------|--------------------|
+| `gitlab/`             | GitLab CE (git + CI/CD)   | 8080, 8443, 8022   |
+| `grafana-prometheus/` | Monitoreo (métricas)      | 3000, 9090         |
+| `n8n/`                | Automatización de flujos  | 5678               |
+| `portainer/`          | Gestión de Docker (UI)    | 9000, 9443         |
+| `postgres/`           | Base de datos PostgreSQL  | 5432               |
+| `rabbitmq/`           | Message broker            | 5672, 15672        |
 
-## Cómo usar
+## Inicio rápido
 
 ```bash
-# Entrar al directorio del servicio deseado
-cd gitlab
+# 1. Entra al directorio del servicio que quieres levantar
+cd postgres
 
-# Copiar entorno de ejemplo
+# 2. Copia el archivo de variables y edítalo
 cp .env.example .env
+nano .env   # o vim, code, etc.
 
-# Editar credenciales si es necesario
-# $EDITOR .env
-
-# Levantar el servicio
+# 3. Levanta el servicio
 docker compose up -d
 
-# Ver logs
+# 4. Verifica el estado
+docker compose ps
 docker compose logs -f
-
-# Detener
-docker compose down
 ```
 
-Cada directorio tiene su propio `README.md` con instrucciones detalladas.
+## Antes de desplegar en producción — checklist
 
-## Requisitos
+- [ ] **Secretos**: reemplaza TODOS los valores marcados con `C4mbia_esto_AHORA!` en cada `.env`
+- [ ] **Claves de cifrado**: genera las claves aleatorias indicadas en cada `.env` (comandos `openssl` incluidos)
+- [ ] **Versiones**: los tags de imagen ya están pinned; actualiza solo después de probar
+- [ ] **Red**: si los servicios necesitan comunicarse entre sí, colócalos en la misma red Docker externa:
+  ```bash
+  docker network create col-net
+  ```
+  y agrega a cada compose:
+  ```yaml
+  networks:
+    default:
+      external: true
+      name: col-net
+  ```
+- [ ] **Firewall**: expón solo los puertos estrictamente necesarios al exterior
+- [ ] **Backups**: monta los volúmenes de datos en una ruta conocida y planifica snapshots
 
-- Docker Engine 24+
-- Docker Compose v2+
+## Generar secretos rápidamente
+
+```bash
+# Contraseña aleatoria (16 bytes, base64)
+openssl rand -base64 16
+
+# Clave hex (32 bytes, para N8N_ENCRYPTION_KEY, GRAFANA_SECRET_KEY, etc.)
+openssl rand -hex 32
+
+# Cookie Erlang para RabbitMQ
+openssl rand -hex 32
+```
