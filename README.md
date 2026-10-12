@@ -1,79 +1,74 @@
 # COL — Stack de infraestructura con Docker Compose
 
+Colección de servicios listos para desplegar con Docker Compose, cada uno en su propio directorio con `docker-compose.yml` y `.env.example`. Ideal para entornos de desarrollo, laboratorios y homelabs.
+
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](https://docs.docker.com/compose/)
 [![YAML](https://img.shields.io/badge/YAML-1.2-CB171E)](https://yaml.org/)
-[![CI](https://github.com/drbash/docker-compose-collection/actions/workflows/ci.yml/badge.svg)](https://github.com/drbash/docker-compose-collection/actions)
-
-Colección de servicios listos para desplegar con Docker Compose, cada uno en su propio directorio con `docker-compose.yml` y `.env.example`. Ideal para entornos de desarrollo, laboratorios y homelabs.
+[![CI](https://github.com/bi0punk/docker-compose-collection/actions/workflows/ci.yml/badge.svg)](https://github.com/bi0punk/docker-compose-collection/actions/workflows/ci.yml)
 
 ## Contenido
 
-- [Servicios incluidos](#servicios-incluidos)
-- [Inicio rápido](#inicio-r%C3%A1pido)
-- [Características](#caracter%C3%ADsticas)
+- [Características](#características)
+- [Arquitectura](#arquitectura)
 - [Stack](#stack)
-- [Estructura](#estructura)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Servicios incluidos](#servicios-incluidos)
 - [Requisitos](#requisitos)
-- [Instalación](#instalaci%C3%B3n)
+- [Instalación](#instalación)
 - [Uso](#uso)
-- [Tests](#tests)
-- [Configuración](#configuraci%C3%B3n)
-- [CI/CD](#cicd)
-- [Antes de producción](#antes-de-producci%C3%B3n)
-- [Generar secretos](#generar-secretos-r%C3%A1pidamente)
-- [Limitaciones / Roadmap](#limitaciones--roadmap)
+- [Configuración](#configuración)
+- [Tests / CI](#tests--ci)
+- [Roadmap](#roadmap)
 - [Licencia](#licencia)
-
-## Servicios incluidos
-
-| Directorio | Servicio | Puerto(s) |
-|---|---|---|
-| `gitlab/` | GitLab CE (git + CI/CD) | 8080, 8443, 8022 |
-| `grafana-prometheus/` | Monitoreo (métricas) | 3000, 9090 |
-| `n8n/` | Automatización de flujos | 5678 |
-| `portainer/` | Gestión de Docker (UI) | 9000, 9443 |
-| `postgres/` | Base de datos PostgreSQL | 5432 |
-| `rabbitmq/` | Message broker | 5672, 15672 |
 
 ## Características
 
-- **Plug-and-play**: cada servicio se levanta con un solo comando
-- **Configuración sensible**: `.env.example` con valores marcados para reemplazar
-- **Seguridad**: secretos generables con `openssl`
-- **Versiones pinned**: imágenes con tag fijo para evitar breaking changes
-- **Redes**: preparados para integrarse en una misma red Docker externa
+- Plug-and-play: cada servicio se levanta con un solo comando.
+- Configuración sensible: cada `.env.example` documentada para reemplazar.
+- Versiones pinned: imágenes con tag fijo para evitar breaking changes.
+- Redes: preparados para integrarse en una misma red Docker externa.
+- Secreto generable con `openssl` (ver Configuración).
+
+## Arquitectura
+
+```mermaid
+flowchart TD
+  DOCKER[Docker Engine + Docker Compose] --> SUB1[gitlab/ GitLab CE]
+  DOCKER --> SUB2[grafana-prometheus/: Grafana + Prometheus]
+  DOCKER --> SUB3[n8n/ Automatizacion]
+  DOCKER --> SUB4[portainer/ Gestion Docker]
+  DOCKER --> SUB5[postgres/ PostgreSQL]
+  DOCKER --> SUB6[rabbitmq/ Message broker]
+  ENV[.env por servicio] --> SUB1
+  ENV --> SUB2
+  ENV --> SUB3
+  ENV --> SUB4
+  ENV --> SUB5
+  ENV --> SUB6
+```
+
+Cada directorio es un stack independiente con su propio compose y variables de entorno.
 
 ## Stack
 
 | Componente | Tecnología |
 |---|---|
 | Contenedores | Docker Compose (V2) |
-| Servicios | GitLab, Grafana, Prometheus, n8n, Portainer, PostgreSQL, RabbitMQ |
-| SO base | Alpine Linux (imágenes oficiales) |
+| Servicios | GitLab CE, Grafana, Prometheus, n8n, Portainer, PostgreSQL, RabbitMQ |
+| SO base | Imágenes oficiales (varias Alpine) |
+| Config | Variables de entorno (`.env`) |
 
-## Estructura
+## Estructura del repositorio
 
 ```
 docker-compose-collection/
 ├── gitlab/                 # GitLab CE
-│   ├── docker-compose.yml
-│   └── .env.example
-├── grafana-prometheus/     # Stack de monitoreo
-│   ├── docker-compose.yml
-│   └── .env.example
-├── n8n/                    # Automatización
-│   ├── docker-compose.yml
-│   └── .env.example
-├── portainer/              # Gestión Docker
-│   ├── docker-compose.yml
-│   └── .env.example
-├── postgres/               # Base de datos
-│   ├── docker-compose.yml
-│   └── .env.example
+├── grafana-prometheus/     # Prometheus + Grafana (métricas)
+├── n8n/                    # Automatización de flujos
+├── portainer/              # Gestión Docker (UI)
+├── postgres/               # Base de datos PostgreSQL
 ├── rabbitmq/               # Message broker
-│   ├── docker-compose.yml
-│   └── .env.example
 ├── tests/
 │   └── test_smoke.py
 ├── .env.example
@@ -81,6 +76,17 @@ docker-compose-collection/
 ├── pyproject.toml
 └── README.md
 ```
+
+## Servicios incluidos
+
+| Directorio | Servicio | Imagen (default pinned) | Puerto(s) |
+|---|---|---|---|
+| `gitlab/` | GitLab CE (git + CI/CD) | `gitlab/gitlab-ce:17.11.1-ce.0` | 8080, 8443, 8022 |
+| `grafana-prometheus/` | Monitoreo (métricas) | `prom/prometheus:v3.4.0`, `grafana/grafana:12.0.1` | 3000, 9090 |
+| `n8n/` | Automatización de flujos | `n8nio/n8n:1.93.0` | 5678 |
+| `portainer/` | Gestión de Docker (UI) | `portainer/portainer-ce:2.27.4` | 9000, 9443 |
+| `postgres/` | Base de datos PostgreSQL | `postgres:16-alpine` | 5432 |
+| `rabbitmq/` | Message broker | `rabbitmq:4-management-alpine` | 5672, 15672 |
 
 ## Requisitos
 
@@ -92,7 +98,7 @@ docker-compose-collection/
 ## Instalación
 
 ```bash
-git clone https://github.com/drbash/docker-compose-collection.git
+git clone https://github.com/bi0punk/docker-compose-collection.git
 cd docker-compose-collection
 ```
 
@@ -114,13 +120,6 @@ docker compose ps
 docker compose logs -f
 ```
 
-## Tests
-
-```bash
-pip install pytest
-pytest tests/ -v
-```
-
 ## Configuración
 
 Cada servicio tiene su propio `.env.example` con variables documentadas. Variables comunes:
@@ -133,23 +132,7 @@ Cada servicio tiene su propio `.env.example` con variables documentadas. Variabl
 | `N8N_ENCRYPTION_KEY` | Clave de cifrado de n8n |
 | `RABBITMQ_ERLANG_COOKIE` | Cookie Erlang para RabbitMQ |
 
-## CI/CD
-
-GitHub Actions ejecuta lint (Ruff) y tests (pytest) en cada push/PR:
-
-- **Ruff check**: linting de Python
-- **Pytest**: smoke tests básicos
-
-## Antes de producción — checklist
-
-- [ ] **Secretos**: reemplaza TODOS los valores marcados con `C4mbia_esto_AHORA!`
-- [ ] **Claves de cifrado**: genera claves aleatorias con `openssl`
-- [ ] **Versiones**: los tags de imagen ya están pinned
-- [ ] **Red**: si los servicios necesitan comunicarse, colócalos en la misma red externa
-- [ ] **Firewall**: expón solo los puertos estrictamente necesarios
-- [ ] **Backups**: monta volúmenes en rutas conocidas y planifica snapshots
-
-## Generar secretos rápidamente
+Generar secretos rápidamente:
 
 ```bash
 # Contraseña aleatoria (16 bytes, base64)
@@ -157,20 +140,28 @@ openssl rand -base64 16
 
 # Clave hex (32 bytes)
 openssl rand -hex 32
-
-# Cookie Erlang para RabbitMQ
-openssl rand -hex 32
 ```
 
-## Limitaciones / Roadmap
+Antes de producción: reemplaza todos los valores marcados, revisa versiones pinned, coloca los servicios en la misma red externa si deben comunicarse, expón solo los puertos necesarios y planifica backups de los volúmenes.
+
+## Tests / CI
+
+```bash
+pip install pytest
+pytest tests/ -v
+```
+
+GitHub Actions ejecuta lint (Ruff) y tests (pytest) en cada push/PR.
+
+## Roadmap
 
 - [x] Servicios básicos de infraestructura
 - [ ] HTTPS automático con Traefik/Caddy
-- [ ] Script de deploy completo con `docker compose up -d` para todo el stack
+- [ ] Script de deploy completo para todo el stack
 - [ ] Monitoreo centralizado con logs agregados
 - [ ] Respaldo automatizado de volúmenes
-- [ ] Soporte para stacks adicionales (Redis, MongoDB, Elasticsearch)
+- [ ] Stacks adicionales (Redis, MongoDB, Elasticsearch)
 
 ## Licencia
 
-MIT
+MIT — ver [LICENSE](LICENSE).
